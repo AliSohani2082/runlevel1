@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "llmkit_version": "0.1.0-dev",
+  "created_at": "2026-10-05T20:00:00Z",
+  "backend": "online",
+  "default_model": "",
+  "provider": {"id": "anthropic", "base_url": "", "model": "", "key_env": "ANTHROPIC_API_KEY", "key_embedded": false},
+  "server": {"port": 8080, "host": "127.0.0.1"},
+  "platforms": [
+    {"type": "platform", "id": "linux-x86_64", "zot_version": "v0.4.17", "llama_version": ""}
+  ],
+  "models": [
+  ],
+  "artifacts": [
+    {"type": "artifact", "component": "zot", "platform": "linux-x86_64", "version": "v0.4.17", "url": "https://github.com/patriceckhart/zot/releases/download/v0.4.17/zot_0.4.17_linux_amd64.tar.gz", "size": 12335984, "sha256": "39cd9c6df77294fe5c1e74019af1515b179415377d931d825016e0692362b50c"}
+  ],
+  "files": [
+    {"type": "file", "path": "VERSION", "size": 10, "sha256": "1111111111111111111111111111111111111111111111111111111111111111", "mode": "data", "platform": "", "component": "doc"},
+    {"type": "file", "path": "bin/linux-x86_64/zot", "size": 31457280, "sha256": "2222222222222222222222222222222222222222222222222222222222222222", "mode": "exec", "platform": "linux-x86_64", "component": "zot"},
+    {"type": "file", "path": "config/zot-config.json", "size": 64, "sha256": "7777777777777777777777777777777777777777777777777777777777777777", "mode": "data", "platform": "", "component": "config"},
+    {"type": "file", "path": "docs/README.txt", "size": 4096, "sha256": "9999999999999999999999999999999999999999999999999999999999999999", "mode": "data", "platform": "", "component": "doc"},
+    {"type": "file", "path": "llm-kit.sh", "size": 20480, "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "mode": "exec", "platform": "", "component": "installer"}
+  ]
+}

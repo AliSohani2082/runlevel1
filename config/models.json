@@ -1,0 +1,14 @@
+{
+  "providers": {
+    "llama.cpp": {
+      "models": [
+        {
+          "id": "@MODEL_ID@",
+          "name": "@MODEL_NAME@",
+          "contextWindow": @CTX_SIZE@,
+          "maxTokens": @MAX_TOKENS@
+        }
+      ]
+    }
+  }
+}

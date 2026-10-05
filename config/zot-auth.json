@@ -1,0 +1,7 @@
+{
+  "additional_api_key_creds": {
+    "llama.cpp": {
+      "base_url": "@LLAMA_URL@"
+    }
+  }
+}
