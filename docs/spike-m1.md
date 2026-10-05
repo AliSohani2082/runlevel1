@@ -25,7 +25,13 @@ commit d81235049)`) and **zot v0.4.17**.
 | zot with only a rendered `ZOT_HOME` (`config.json`, `auth.json`, `models.json`, `AGENTS.md`) plus `LLAMA_API_KEY` runs a turn fully offline | pass (exit 0) |
 | `zot --list-models` shows `llama.cpp/<id>` with `source=user` from our `models.json` | pass |
 | SIGTERM to the router stops its child instances ("unload_all … exited with status 0") | pass |
-| **One tool call** (`write hello.txt`) | **pending**: needs a real instruct model. `stories260K` (plumbing model, 260K params) only babbles. Will be re-run with Qwen2.5-0.5B-Instruct and later the 7B default; this section gets updated. |
+| **One tool call**, Qwen2.5-0.5B-Instruct Q4_K_M | **pass**: native `write` call, `hello.txt` = `hello from llm-kit`, 20 s end to end |
+| **One tool call**, Qwen2.5-Coder-7B-Instruct Q4_K_M (the PRD default) | **fail, 0 of 3**: the model prints the call as text in a code block (```` ```json {"name": "write", …} ``` ````) instead of a native `<tool_call>`, so llama.cpp returns plain content and zot executes nothing. An AGENTS.md instruction did not change this. `--chat-template chatml` dropped the tool schemas entirely. |
+
+**M1 verdict: the architecture holds.** A native tool call works end to
+end, offline, through router mode. **But R1 now applies to the default
+model** (see D9): Qwen2.5-Coder-7B-Instruct does not emit native tool calls
+in this stack, so M2 must pick and verify a replacement default first.
 
 **R3 resolved** for the current latest build: b11429 supports router mode
 as zot expects. **R4 resolved**: a GGUF dropped into `--models-dir` is
@@ -93,3 +99,24 @@ listed and loadable with no network, and zot reaches it through its
 13. The web UI is enabled by default on the router port (127.0.0.1 only).
     It is harmless and protected by the same key. `--no-webui` is
     available if we want less surface.
+14. **Throughput on this CPU (i7-8550U, 4 threads, Q4_K_M), router + `--parallel 1`:**
+
+    | model | prompt eval | generation | first zot turn (≈1,550 prompt tokens) |
+    |---|---|---|---|
+    | Qwen2.5-0.5B-Instruct | 115 tok/s | 21 tok/s | ≈ 16 s |
+    | Qwen2.5-Coder-7B-Instruct | 11.7 tok/s | 3.0 tok/s | ≈ 140 s |
+
+    The model loads in 2 s (0.5B) and 23 s (7B, cold page cache). The prompt
+    cache works: zot's second turn processed only the 93 new tokens. A 7B
+    model is usable but slow on a laptop CPU: every fresh conversation
+    waits about 2 minutes for its first answer (R8). 3–4B models with native
+    tool calling deserve a serious look in M2.
+15. **Tool-call format is a property of the model, not of zot or the
+    router.** The general Qwen2.5 Instruct line (0.5B) emits native
+    `<tool_call>` blocks that llama.cpp parses. The Coder 7B variant prints
+    a JSON code block. M2's harness must count only real `tool_use_start`
+    events. A tool name in assistant text is not a tool call (the first
+    version of this spike made exactly that mistake).
+16. Forcing `--chat-template chatml` is **not** a workaround. With it,
+    llama.cpp b11429 sends no tool schemas (prompt fell from 1,552 to 800
+    tokens) and the model improvises shell commands in text.

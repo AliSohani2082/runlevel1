@@ -24,8 +24,8 @@ are in [docs/contracts.md](docs/contracts.md); deviations from the PRD are in
 | milestone | scope | state |
 |---|---|---|
 | M0 | Foundation: repo layout, contracts, catalog, test + lint harness | done |
-| M1 | Spike: llama.cpp router mode + offline model load + one zot tool call | see [docs/spike-m1.md](docs/spike-m1.md) |
-| M2 | Model evaluation (tool-call success, tokens/sec) | planned |
+| M1 | Spike: llama.cpp router mode + offline model load + one zot tool call | done: architecture verified offline; the default model fails tool calls, see [docs/spike-m1.md](docs/spike-m1.md) and D9 |
+| M2 | Model evaluation (tool-call success, tokens/sec); **first: pick a new default (D9)** | next |
 | M3 | `setup.sh` v1 (linux-x86_64, one model) | planned |
 | M4 | `llm-kit.sh` v1 (offline Ubuntu live → zot edits a file) | planned |
 | M5 | Multi-platform (linux-aarch64, darwin-arm64) | planned |

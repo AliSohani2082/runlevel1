@@ -68,3 +68,19 @@ entries by file stem.
 The GitHub repository is `runlevel1`. The artefacts keep the PRD's names
 (`llm-kit/`, `llm-kit.sh`, `setup.sh`), so the spec and the code agree.
 Renaming is a separate, mechanical change if the owner wants it.
+
+## D9. The default model needs replacing (M1 finding, R1)
+
+The PRD made `qwen2.5-coder-7b-instruct` the default on the assumption of
+"known-good tool calling". In M1 it produced **0 native tool calls in 3
+runs** through zot + llama.cpp b11429. It prints the call inside a code
+block instead (docs/spike-m1.md, findings 15 and 16). Its catalog entry is
+now `tool_calling: broken`. It stays the `default` only as a placeholder,
+because no other model is verified yet.
+
+First task of M2: evaluate replacement defaults that are general instruct
+models with native tool calling. Qwen2.5-7B-Instruct is the closest drop-in
+(its 0.5B sibling called tools correctly in M1), alongside current 3–4B
+instruct models that are also faster on CPU (R8). Move `default` to the
+first one that passes. Until then, setup.sh must warn when the selected
+model's `tool_calling` is `broken`.

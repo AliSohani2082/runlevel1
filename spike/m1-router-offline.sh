@@ -8,7 +8,8 @@
 # Usage: spike/m1-router-offline.sh BIN_DIR MODEL_GGUF [MODEL_ID]
 #   BIN_DIR     dir with llama-server (+ libs, symlink-free) and zot
 #   MODEL_GGUF  a GGUF file; it is hardlinked/copied as <MODEL_ID>.gguf
-# Env: PORT (8080), CTX (8192), PROMPT, WORK (default: mktemp), KEEP=1
+# Env: PORT (8080), CTX (8192), PROMPT, WORK (default: mktemp), KEEP=1,
+#      SERVER_ARGS (extra llama-server args, e.g. "--chat-template chatml")
 #
 # The script re-executes itself inside `unshare -rn` (new user + network
 # namespace: only a loopback interface, no route anywhere).
@@ -90,7 +91,7 @@ inside() {
   step "start llama-server in router mode (no -m), models-dir=$MODELS"
   local t0=$SECONDS
   "$BIN/llama-server" --host 127.0.0.1 --port "$PORT" --models-dir "$MODELS" \
-    --models-max 1 -c "$CTX" --parallel 1 --jinja >"$WORK/run/llama-server.log" 2>&1 &
+    --models-max 1 -c "$CTX" --parallel 1 --jinja ${SERVER_ARGS:-} >"$WORK/run/llama-server.log" 2>&1 &
   local srv=$!
   echo "$srv" >"$WORK/run/llama-server.pid"
   local i=0
@@ -153,10 +154,17 @@ inside() {
     </dev/null >"$WORK/run/zot-events.jsonl" 2>"$WORK/run/zot-stderr.txt"
   local zrc=$?
   step "zot exit=$zrc after $((SECONDS - t0))s; events: $(wc -l <"$WORK/run/zot-events.jsonl")"
-  case $(cat "$WORK/run/zot-events.jsonl") in
-    *'"write"'* | *'"bash"'* | *'"edit"'*) ok "a tool call appears in the event stream" ;;
-    *) bad "no tool call in the event stream" ;;
-  esac
+  # A real tool call is a tool_use_start event. A tool name inside assistant
+  # text (e.g. a JSON code block the model printed instead of calling the
+  # tool) does not count: the harness never executes it.
+  local ev calls=""
+  while IFS= read -r ev; do
+    case $ev in *'"type":"tool_use_start"'*)
+      ev=${ev#*\"name\":\"}
+      calls="$calls ${ev%%\"*}" ;;
+    esac
+  done <"$WORK/run/zot-events.jsonl"
+  if [ -n "$calls" ]; then ok "native tool call(s):$calls"; else bad "no native tool call (tool_use_start) in the event stream"; fi
   if [ -f "$WORK/project/hello.txt" ]; then
     ok "hello.txt written: $(head -c 200 "$WORK/project/hello.txt")"
   else
