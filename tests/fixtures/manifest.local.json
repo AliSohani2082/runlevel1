@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "llmkit_version": "0.1.0-dev",
+  "created_at": "2026-10-05T20:00:00Z",
+  "backend": "local",
+  "default_model": "qwen2.5-coder-7b-instruct",
+  "provider": {"id": "", "base_url": "", "model": "", "key_env": "", "key_embedded": false},
+  "server": {"port": 8080, "host": "127.0.0.1"},
+  "platforms": [
+    {"type": "platform", "id": "linux-x86_64", "zot_version": "v0.4.17", "llama_version": "b11429"},
+    {"type": "platform", "id": "darwin-arm64", "zot_version": "v0.4.17", "llama_version": "b11429"}
+  ],
+  "models": [
+    {"type": "model", "id": "qwen2.5-coder-7b-instruct", "file": "models/qwen2.5-coder-7b-instruct.gguf", "params": "7B", "menu": "~4.4GB  Not DevOps-tuned, but known-good tool calling.", "size": 4683073536, "sha256": "509287f78cb4d4cf6b3843734733b914b2c158e43e22a7f4bf5e963800894d3c", "min_ram_mb": 8192, "ctx_size": 16384, "chat_template": "embedded", "license": "apache-2.0", "tool_calling": "unverified"},
+    {"type": "model", "id": "phi3-sysadmin", "file": "models/phi3-sysadmin.gguf", "params": "3.8B", "menu": "~2.3GB  Small and fast. Author warns it may invent commands. Needs ~5GB RAM.", "size": 2393232608, "sha256": "0000000000000000000000000000000000000000000000000000000000000000", "min_ram_mb": 5120, "ctx_size": 4096, "chat_template": "embedded", "license": "unknown", "tool_calling": "unverified"}
+  ],
+  "artifacts": [
+    {"type": "artifact", "component": "zot", "platform": "linux-x86_64", "version": "v0.4.17", "url": "https://github.com/patriceckhart/zot/releases/download/v0.4.17/zot_0.4.17_linux_amd64.tar.gz", "size": 12335984, "sha256": "39cd9c6df77294fe5c1e74019af1515b179415377d931d825016e0692362b50c"},
+    {"type": "artifact", "component": "llama", "platform": "linux-x86_64", "version": "b11429", "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11429/llama-b11429-bin-ubuntu-x64.tar.gz", "size": 17693462, "sha256": "f6d25dde8f51133143d1453da4fd5f73b145127177612a283bf7995957af3392"},
+    {"type": "artifact", "component": "zot", "platform": "darwin-arm64", "version": "v0.4.17", "url": "https://github.com/patriceckhart/zot/releases/download/v0.4.17/zot_0.4.17_darwin_arm64.tar.gz", "size": 11955015, "sha256": "9aaea3210b1d9694c0ab3012f7349c375c23cfe75b6d5e312c1f884805e39200"},
+    {"type": "artifact", "component": "llama", "platform": "darwin-arm64", "version": "b11429", "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11429/llama-b11429-bin-macos-arm64.tar.gz", "size": 11971406, "sha256": "740288ec6887be94280a5dfa25b5e23a78285cab104519e6c7e218904ee82459"},
+    {"type": "artifact", "component": "model", "platform": "", "version": "13fb94bfda8c8cf22497dc57b78f391a9acb426a", "url": "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/resolve/13fb94bfda8c8cf22497dc57b78f391a9acb426a/qwen2.5-coder-7b-instruct-q4_k_m.gguf", "size": 4683073536, "sha256": "509287f78cb4d4cf6b3843734733b914b2c158e43e22a7f4bf5e963800894d3c"}
+  ],
+  "files": [
+    {"type": "file", "path": "VERSION", "size": 10, "sha256": "1111111111111111111111111111111111111111111111111111111111111111", "mode": "data", "platform": "", "component": "doc"},
+    {"type": "file", "path": "bin/linux-x86_64/zot", "size": 31457280, "sha256": "2222222222222222222222222222222222222222222222222222222222222222", "mode": "exec", "platform": "linux-x86_64", "component": "zot"},
+    {"type": "file", "path": "bin/linux-x86_64/llama-server", "size": 6291456, "sha256": "3333333333333333333333333333333333333333333333333333333333333333", "mode": "exec", "platform": "linux-x86_64", "component": "llama"},
+    {"type": "file", "path": "bin/linux-x86_64/libllama.so.0", "size": 2097152, "sha256": "4444444444444444444444444444444444444444444444444444444444444444", "mode": "data", "platform": "linux-x86_64", "component": "llama"},
+    {"type": "file", "path": "bin/darwin-arm64/zot", "size": 30408704, "sha256": "5555555555555555555555555555555555555555555555555555555555555555", "mode": "exec", "platform": "darwin-arm64", "component": "zot"},
+    {"type": "file", "path": "bin/darwin-arm64/llama-server", "size": 5242880, "sha256": "6666666666666666666666666666666666666666666666666666666666666666", "mode": "exec", "platform": "darwin-arm64", "component": "llama"},
+    {"type": "file", "path": "models/qwen2.5-coder-7b-instruct.gguf", "size": 4683073536, "sha256": "509287f78cb4d4cf6b3843734733b914b2c158e43e22a7f4bf5e963800894d3c", "mode": "data", "platform": "", "component": "model"},
+    {"type": "file", "path": "models/phi3-sysadmin.gguf", "size": 2393232608, "sha256": "0000000000000000000000000000000000000000000000000000000000000000", "mode": "data", "platform": "", "component": "model"},
+    {"type": "file", "path": "config/zot-config.json", "size": 64, "sha256": "7777777777777777777777777777777777777777777777777777777777777777", "mode": "data", "platform": "", "component": "config"},
+    {"type": "file", "path": "config/models.json", "size": 256, "sha256": "8888888888888888888888888888888888888888888888888888888888888888", "mode": "data", "platform": "", "component": "config"},
+    {"type": "file", "path": "docs/README.txt", "size": 4096, "sha256": "9999999999999999999999999999999999999999999999999999999999999999", "mode": "data", "platform": "", "component": "doc"},
+    {"type": "file", "path": "llm-kit.sh", "size": 20480, "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "mode": "exec", "platform": "", "component": "installer"}
+  ]
+}

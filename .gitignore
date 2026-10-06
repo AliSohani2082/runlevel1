@@ -1,0 +1,13 @@
+# Dev-only artefacts (models, release archives, extracted binaries, locks)
+.cache/
+# Claude Code agent worktrees
+.claude/worktrees/
+# Local scratch output from tests and eval runs
+/out/
+*.log
+
+# Machine-specific notes for local Claude Code sessions
+CLAUDE.local.md
+
+# Local copy of the PRD (docs/PRD.md is the tracked one)
+llm-kit*PRD.md
