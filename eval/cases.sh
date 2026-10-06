@@ -492,17 +492,15 @@ check_restore_backup() {
 }
 solve_restore_backup() { cp etc/nginx/nginx.conf.bak etc/nginx/nginx.conf; echo "Restored."; }
 
+# The etc tree with or without its etc/ prefix: `tar -czf … etc` and
+# `tar -czf … -C etc .` are both an archive of the directory.
 check_tar_etc() {
-  local list
+  local list f
   [ -f backups/etc.tar.gz ] || { echo "backups/etc.tar.gz was not created"; return 1; }
   list=$(tar -tzf backups/etc.tar.gz 2>&1) || { echo "not a gzip tar archive: $list"; return 1; }
-  case $list in
-    (*etc/hosts*) ;;
-    (*) echo "archive does not contain etc/hosts"; return 1 ;;
-  esac
-  case $list in
-    (*etc/ssh/sshd_config*) ;;
-    (*) echo "archive does not contain etc/ssh/sshd_config"; return 1 ;;
-  esac
+  for f in hosts ssh/sshd_config; do
+    printf '%s\n' "$list" | grep -Eqx "(\./)?(etc/)?$f" ||
+      { echo "archive does not contain etc/$f"; return 1; }
+  done
 }
 solve_tar_etc() { mkdir -p backups && tar -czf backups/etc.tar.gz etc; echo "Created."; }

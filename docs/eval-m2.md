@@ -47,6 +47,11 @@ Suite 1 wrote `etc/hosts`, and models "corrected" that to the host's
 rather than tool calling. Suite 2 is the one reported here; `runs.tsv`
 records the suite version of every run.
 
+`tar_etc` accepts the etc tree with or without its `etc/` prefix
+(`tar -czf … etc` and `tar -czf … -C etc .` both archive the directory).
+That check was loosened after Qwen3-4B's run; its archive was rescored from
+the saved workspace, and no earlier run had created an archive at all.
+
 Answers are not guessable from general knowledge: port 5432 belongs to
 pgbouncer (postgres moved to 5433), the OOM log names the process that
 *invoked* the killer (postgres) next to the victim (java), /var is xfs.
@@ -76,6 +81,39 @@ lines, reasoning tokens.
 The default becomes the `verified` model with the most passed cases; ties go
 to the faster one on CPU (R8), then to the smaller download.
 
+## Results (suite 2)
+
+Machine: 4 cores, about 8 GB free RAM, shared with other agents' builds and
+tests (only model runs take the inference lock), so tokens/sec is a floor.
+tok/s are totals over the run (all prompt or generated tokens / their time).
+
+| model | native calls | passed | text-only calls | tool errors | prompt tok/s | gen tok/s | load | median case | verdict |
+|---|---|---|---|---|---|---|---|---|---|
+| Qwen2.5-0.5B-Instruct (baseline) | 19/20 | 3/20 | 0 | 53 | 94.4 | 19.3 | 2 s | 7 s | broken |
+| Qwen2.5-Coder-7B-Instruct (current default) | 0/20 | 0/20 | 13 | 0 | 12.4 | 4.1 | 17 s | 24 s | broken |
+| Qwen3-4B-Instruct-2507 | 20/20 | 14/20 | 0 | 8 | 15.8 | 3.4 | 12 s | 48 s | unverified |
+
+**Qwen2.5-Coder-7B** confirms D9 on the full suite: not one native call; in
+13 cases it printed the call as text, which zot does not run.
+
+**Qwen2.5-0.5B** calls tools natively almost every time but with arguments
+that rarely work (53 tool errors): wrong paths, edits whose `oldText` is not
+in the file, invented commands.
+
+**Qwen3-4B-Instruct-2507** calls tools natively in every case, and its calls
+are well formed. Its six failures:
+
+- In 4 cases (`fstab_var`, `sshd_root`, `cron_add`, `hosts_entry`) it turned
+  the prompt's `./etc/…` into the host's `/etc/…` and read or tried to edit
+  the real file. The sandbox kept the host read-only, so the edits failed,
+  but on a real machine this edits system files the user did not name.
+  A config repo with its own `etc/` is common in DevOps work, so this counts
+  as the model's failure, not the suite's.
+- `json_fix`: read the file twice and declared the JSON valid (it has a
+  trailing comma).
+- `most_errors`: counted correctly (11, billing) with bash, then wrote the
+  first file name it had read (`logs/app-api.log`) into answer.txt.
+
 ## R2: the three DevOps models, checked against their repos (2026-10-06)
 
 | id | repo (corrected) | GGUF file | size | licence | findings |
@@ -86,3 +124,18 @@ to the faster one on CPU (R8), then to the smaller download.
 
 All three have a usable Q4_K_M GGUF and a licence that allows redistribution,
 so none is dropped on R2 grounds.
+
+## Download cap: no file over 3 GB
+
+The owner capped every download for this project at 3 GB (2026-10-06): over
+the dev machine's proxy a 4.7 GB file takes hours. Two candidates have no
+file under the cap, so they are not evaluated here:
+
+| id | smallest GGUF | other files |
+|---|---|---|
+| `ulysses-7b` | Q4_K_M, 4,683,073,312 bytes | F16 (15.2 GB); no smaller quant in the repo |
+| `qwen2.5-7b-instruct` | Q4_K_M, 4,683,074,240 bytes | (a Q2/IQ2 quant would fit but would not say how the Q4_K_M ships) |
+
+Qwen2.5-Coder-7B (4.68 GB) is evaluated only because it was already in the
+dev cache from M1. `qweble-sol-4b` has a single GGUF (Q4_K_M, 2.71 GB) and no
+third-party quants, which is under the cap.

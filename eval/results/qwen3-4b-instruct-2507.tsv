@@ -1,0 +1,21 @@
+case	kind	pass	tool_calls	tool_errors	text_call	steps	secs	prompt_tok	prompt_tps	gen_tok	gen_tps	reasoning_tok	zot_exit	note
+write_motd	write	1	write	0	0	2	92	1672	21.2	69	5.1	0	0	ok
+nginx_port	read	1	read	0	0	2	19	202	16.9	37	5.1	0	0	ok
+k8s_replicas	edit	1	read,edit	0	0	3	46	403	17.0	108	4.8	0	0	ok
+list_units	glob	1	glob	0	0	2	19	106	15.1	65	5.3	0	0	ok
+count_500	bash	1	bash	0	0	2	13	113	15.2	34	5.3	0	0	ok
+oom_victim	read	1	read	0	0	2	48	706	17.9	42	4.6	0	0	ok
+fstab_var	read	0	read	0	0	2	51	740	17.9	44	4.4	0	0	reply does not mention 'xfs'
+sshd_root	edit	0	read,edit,read,edit,read,edit,edit,read	4	0	8	573	3588	15.7	773	2.2	0	1	etc/ssh/sshd_config has no line matching /^[[:space:]]*PermitRootLogin[[:space:]]+no[[:space:]]*$/
+chmod_deploy	bash	1	bash	0	0	2	13	80	14.3	38	5.3	0	0	ok
+systemd_unit	write	1	write	0	0	2	46	169	14.3	152	4.4	0	0	ok
+ss_listener	read	1	read	0	0	2	48	434	12.9	51	3.5	0	0	ok
+disk_full	read	1	read	0	0	2	39	405	15.1	44	3.6	0	0	ok
+cron_add	edit	0	read	1	0	2	25	93	8.6	69	4.7	0	0	etc/crontab has no line matching /^30[[:space:]]+0?3[[:space:]]+\*[[:space:]]+\*[[:space:]]+\*[[:space:]]+root[[:space:]]+/usr/local/bin/backup\.sh/
+dockerfile_base	edit	1	read,edit	0	0	3	54	315	12.6	119	4.0	0	0	ok
+json_fix	edit	0	read,read	0	0	3	100	323	13.5	297	3.9	0	0	config/app.json still does not parse: jq: parse error: Expected another key-value pair at line 7, column 3
+k8s_env	edit	1	read,edit	0	0	3	63	395	14.9	155	4.1	0	0	ok
+hosts_entry	edit	0	edit,read,edit	2	0	4	137	334	12.2	445	4.0	0	0	etc/hosts has no line matching /^10\.0\.0\.5[[:space:]]+([^#]*[[:space:]])?db\.internal([[:space:]]|$)/
+most_errors	multi	0	glob,bash,read,write	0	0	5	118	1091	14.6	180	4.1	0	0	answer.txt holds: logs/app-api.log
+restore_backup	bash	1	bash	0	0	2	19	107	13.3	57	4.8	0	0	ok
+tar_etc	bash	1	bash,bash	1	0	3	64	396	15.4	165	4.3	0	0	ok (rescored: holds ./hosts, without the etc/ prefix)

@@ -76,6 +76,21 @@ test_checks_reject_typical_wrong_outcomes() {
   printf '30 3 * * * root /usr/local/bin/backup.sh\n' >etc/crontab
   run check_cron_add
   assert_eq 1 "$STATUS"
+  # An archive of something else than ./etc.
+  mkdir -p backups && tar -czf backups/etc.tar.gz logs
+  run check_tar_etc
+  assert_eq 1 "$STATUS"
+}
+
+test_tar_check_accepts_etc_with_or_without_its_prefix() {
+  eval_fixture
+  mkdir backups
+  tar -czf backups/etc.tar.gz -C ./etc .
+  run check_tar_etc
+  assert_eq 0 "$STATUS" "$OUTPUT"
+  tar -czf backups/etc.tar.gz ./etc
+  run check_tar_etc
+  assert_eq 0 "$STATUS" "$OUTPUT"
 }
 
 # A tool call as zot --json reports it (shape taken from the M1 spike run).
