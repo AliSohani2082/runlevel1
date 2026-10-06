@@ -41,6 +41,12 @@ cache stay identical between cases.
 | run a command | count_500, chmod_deploy, restore_backup, tar_etc |
 | several steps | most_errors (count per file, then write the winner) |
 
+Prompts write every workspace path as `./etc/hosts`, `./logs/kern.log`.
+Suite 1 wrote `etc/hosts`, and models "corrected" that to the host's
+`/etc/hosts` (Qwen3-4B did on its second case), which tests path guessing
+rather than tool calling. Suite 2 is the one reported here; `runs.tsv`
+records the suite version of every run.
+
 Answers are not guessable from general knowledge: port 5432 belongs to
 pgbouncer (postgres moved to 5433), the OOM log names the process that
 *invoked* the killer (postgres) next to the victim (java), /var is xfs.
@@ -69,3 +75,14 @@ lines, reasoning tokens.
 
 The default becomes the `verified` model with the most passed cases; ties go
 to the faster one on CPU (R8), then to the smaller download.
+
+## R2: the three DevOps models, checked against their repos (2026-10-06)
+
+| id | repo (corrected) | GGUF file | size | licence | findings |
+|---|---|---|---|---|---|
+| `ulysses-7b` | `jalpan04/Ulysses` | `devops_model_q4_k_m.gguf` | 4,683,073,312 | apache-2.0 | **Gated** (auto-approved after accepting terms; downloads need an HF token with access). Base is Qwen2.5-Coder-7B (the base model, not Instruct). Fine-tuned in two QLoRA phases (continued pre-training on docs, then 8,076 ChatML Q&A pairs generated with the Gemini API and Ollama). No tool-use data. |
+| `qweble-sol-4b` | `ukuwzi/Qweble-Sol-4B-GGUF` (the PRD's `-MLX` repo has only safetensors) | `Qweble-Sol-4B-Q4_K_M.gguf` | 2,708,804,064 | apache-2.0 | Qwen3.5-4B fine-tune. Keeps Qwen3.5's thinking mode (thinks by default). |
+| `phi3-sysadmin` | `lalatendu/phi3-sysadmin-lalatendu` (`lalatendu/phi3-sysadmin` redirects there) | `phi3-sysadmin-Q4_K_M.gguf` | 2,318,919,552 | mit | Phi-3-mini-4k fine-tune on 1,026 Q&A pairs. **4,096-token context**: zot's system prompt and tool schemas take about 1,600 of it before the user speaks (spike-m1 #7). The author warns it may hallucinate commands. |
+
+All three have a usable Q4_K_M GGUF and a licence that allows redistribution,
+so none is dropped on R2 grounds.

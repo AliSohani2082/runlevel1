@@ -1,3 +1,0 @@
-date	label	model	gguf	ctx	server_args	llama	zot	cases	tool_cases	passed	text_call_cases	tool_errors	prompt_tps	gen_tps	load_s	first_case_s	median_case_s	total_s	verdict
-2026-10-06T12:10:41Z	qwen2.5-0.5b-instruct	qwen2.5-0.5b-instruct	qwen2.5-0.5b-instruct-q4_k_m.gguf	16384	-	b11429	v0.4.17	20	16	1	0	39	70.7	20.6	2	16	6	681	broken
-2026-10-06T12:29:06Z	qwen2.5-coder-7b-instruct	qwen2.5-coder-7b-instruct	qwen2.5-coder-7b-instruct-q4_k_m.gguf	16384	-	b11429	v0.4.17	20	0	0	13	0	10.0	3.6	21	153	33	1035	broken

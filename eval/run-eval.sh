@@ -188,8 +188,8 @@ inside() {
   v=$(verdict "$n" "$tool_cases" "$passed")
   build=$(sed -n 's/.*(build \([0-9]*\).*/b\1/p' "$run/llama-version.txt" | head -n 1)
   zv=$(sed -n 's/^zot v\{0,1\}\([0-9][0-9.]*\).*$/v\1/p' "$run/zot-version.txt" | head -n 1)
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$EV_LABEL" "$id" "$EV_GGUF_NAME" "$ctx" "${EV_SERVER_ARGS:--}" \
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$EVAL_SUITE" "$EV_LABEL" "$id" "$EV_GGUF_NAME" "$ctx" "${EV_SERVER_ARGS:--}" \
     "${build:-?}" "${zv:-?}" "$n" "$tool_cases" "$passed" "$text_cases" "$tool_errors" \
     "$(tok_per_s "$sum_pt" "$sum_pm")" "$(tok_per_s "$sum_gt" "$sum_gm")" "$load_s" "${first:-0}" "${median:-0}" "$total_s" "$v" \
     >"$work/summary.tsv"
@@ -256,7 +256,7 @@ if [ $write_results = 1 ]; then
   mkdir -p "$results"
   cp "$work/results.tsv" "$results/$label.tsv"
   [ -f "$results/runs.tsv" ] ||
-    printf 'date\tlabel\tmodel\tgguf\tctx\tserver_args\tllama\tzot\tcases\ttool_cases\tpassed\ttext_call_cases\ttool_errors\tprompt_tps\tgen_tps\tload_s\tfirst_case_s\tmedian_case_s\ttotal_s\tverdict\n' >"$results/runs.tsv"
+    printf 'date\tsuite\tlabel\tmodel\tgguf\tctx\tserver_args\tllama\tzot\tcases\ttool_cases\tpassed\ttext_call_cases\ttool_errors\tprompt_tps\tgen_tps\tload_s\tfirst_case_s\tmedian_case_s\ttotal_s\tverdict\n' >"$results/runs.tsv"
   cat "$work/summary.tsv" >>"$results/runs.tsv"
   say "results: $results/$label.tsv, $results/runs.tsv"
 fi

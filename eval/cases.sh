@@ -16,6 +16,11 @@
 # at how the agent got there. Answers are matched case-insensitively.
 # jq is needed by check_json_fix (dev tool).
 
+# Bump when a prompt, the fixture or a check changes: results of different
+# suite versions are not comparable. runs.tsv records it.
+# shellcheck disable=SC2034 # read by run-eval.sh
+EVAL_SUITE=2
+
 # shellcheck disable=SC2034 # read by run-eval.sh and the tests
 EVAL_CASES="write_motd nginx_port k8s_replicas list_units count_500 oom_victim
 fstab_var sshd_root chmod_deploy systemd_unit ss_listener disk_full cron_add
@@ -33,28 +38,31 @@ eval_kind() {
   esac
 }
 
+# Every workspace path is written ./relative. Suite 1 wrote etc/hosts and the
+# like, and models "corrected" that to the host's /etc/hosts: a test of
+# path guessing, not of tool calling.
 eval_prompt() {
   case $1 in
     (write_motd) echo "Create a file named motd.txt in the current directory containing exactly this line: Maintenance window: Sunday 02:00 UTC" ;;
-    (nginx_port) echo "Which port does the server block in etc/nginx/sites-enabled/app.conf listen on?" ;;
-    (k8s_replicas) echo "Scale the deployment in k8s/deployment.yaml to 3 replicas by editing the file." ;;
-    (list_units) echo "Which systemd service units are defined under etc/systemd/system? List the .service file names." ;;
-    (count_500) echo "How many requests in logs/access.log returned HTTP status 500? Answer with the number." ;;
-    (oom_victim) echo "According to logs/kern.log, which process did the OOM killer kill? Give the process name and its PID." ;;
-    (fstab_var) echo "In etc/fstab, which filesystem type is used for the /var mount?" ;;
-    (sshd_root) echo "Harden etc/ssh/sshd_config: disable root login over SSH. Change only that setting." ;;
-    (chmod_deploy) echo "Make the script deploy.sh executable." ;;
+    (nginx_port) echo "Which port does the server block in ./etc/nginx/sites-enabled/app.conf listen on?" ;;
+    (k8s_replicas) echo "Scale the deployment in ./k8s/deployment.yaml to 3 replicas by editing the file." ;;
+    (list_units) echo "Which systemd service units are defined under ./etc/systemd/system? List the .service file names." ;;
+    (count_500) echo "How many requests in ./logs/access.log returned HTTP status 500? Answer with the number." ;;
+    (oom_victim) echo "According to ./logs/kern.log, which process did the OOM killer kill? Give the process name and its PID." ;;
+    (fstab_var) echo "In ./etc/fstab, which filesystem type is used for the /var mount?" ;;
+    (sshd_root) echo "Harden ./etc/ssh/sshd_config: disable root login over SSH. Change only that setting." ;;
+    (chmod_deploy) echo "Make the script ./deploy.sh executable." ;;
     (systemd_unit) echo "Write a systemd service unit file named backup.service in the current directory. It should run /usr/local/bin/backup.sh as the user backup, with Type=oneshot." ;;
-    (ss_listener) echo "diag/ss-tlnp.txt holds the output of ss -tlnp from a server. Which process is listening on port 5432?" ;;
-    (disk_full) echo "diag/df-h.txt holds df -h output from a server. Which mount point is almost full?" ;;
-    (cron_add) echo "Add an entry to etc/crontab that runs /usr/local/bin/backup.sh as root every day at 03:30. Keep the existing entries." ;;
-    (dockerfile_base) echo "Update the base image in Dockerfile from ubuntu:20.04 to ubuntu:24.04." ;;
-    (json_fix) echo "config/app.json fails to parse. Fix the JSON syntax error without changing any values." ;;
-    (k8s_env) echo "Add an environment variable LOG_LEVEL with the value debug to the container in k8s/deployment.yaml." ;;
-    (hosts_entry) echo "Add an entry to etc/hosts that maps db.internal to 10.0.0.5." ;;
-    (most_errors) echo "Find which file in logs/ named app-*.log has the most lines containing ERROR, and write just that file name into answer.txt." ;;
-    (restore_backup) echo "etc/nginx/nginx.conf was corrupted. Restore it from the backup etc/nginx/nginx.conf.bak." ;;
-    (tar_etc) echo "Create a gzip-compressed tar archive of the etc directory at backups/etc.tar.gz." ;;
+    (ss_listener) echo "./diag/ss-tlnp.txt holds the output of ss -tlnp from a server. Which process is listening on port 5432?" ;;
+    (disk_full) echo "./diag/df-h.txt holds df -h output from a server. Which mount point is almost full?" ;;
+    (cron_add) echo "Add an entry to ./etc/crontab that runs /usr/local/bin/backup.sh as root every day at 03:30. Keep the existing entries." ;;
+    (dockerfile_base) echo "Update the base image in ./Dockerfile from ubuntu:20.04 to ubuntu:24.04." ;;
+    (json_fix) echo "./config/app.json fails to parse. Fix the JSON syntax error without changing any values." ;;
+    (k8s_env) echo "Add an environment variable LOG_LEVEL with the value debug to the container in ./k8s/deployment.yaml." ;;
+    (hosts_entry) echo "Add an entry to ./etc/hosts that maps db.internal to 10.0.0.5." ;;
+    (most_errors) echo "Find which file in ./logs/ named app-*.log has the most lines containing ERROR, and write just that file name into ./answer.txt." ;;
+    (restore_backup) echo "./etc/nginx/nginx.conf was corrupted. Restore it from the backup ./etc/nginx/nginx.conf.bak." ;;
+    (tar_etc) echo "Create a gzip-compressed tar archive of the ./etc directory at ./backups/etc.tar.gz." ;;
     (*) return 1 ;;
   esac
 }
