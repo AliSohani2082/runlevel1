@@ -96,7 +96,7 @@ tok/s are totals over the run (all prompt or generated tokens / their time).
 | Qweble-Sol-4B | 20/20 | 19/20 | 0 | 0 | 16.4 | 5.4 | 12 s | 93 s | **verified** |
 | _Qweble-Sol-4B, first run (2026-10-07)_ | _1/20_ | _1/20_ | _0_ | _0_ | _21.1_ | _6.1_ | _11 s_ | _18 s_ | _invalid: infra fault, ignore (below)_ |
 | Phi-3-mini sysadmin (4k ctx) | 0/20 | 0/20 | 0 | 0 | 8.0 | 3.2 | 12 s | 12 s | broken |
-| Qwen3.5-4B | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending (another worker's run; no numbers yet)_ |
+| Qwen3.5-4B | 20/20 | 19/20 | 0 | 5 | 15.4 | 5.0 | 6 s | 91 s | **verified** |
 
 **Qwen2.5-Coder-7B** confirms D9 on the full suite: not one native call; in
 13 cases it printed the call as text, which zot does not run.
@@ -284,17 +284,32 @@ give it native calls, and the model has no tool-use training data (see the R2
 table: 1,026 Q&A pairs), so even then `broken` is the expected result.
 No re-run is needed.
 
-**Qwen3.5-4B** _(placeholder: another worker is producing this run; add the
-numbers and a paragraph here, and fill in the table row above. Not invented.)_
+**Qwen3.5-4B** (the base of Qweble-Sol-4B) calls tools natively in every case
+and passed 19/20, with 5 tool errors that it recovered from. Its one failure is
+`fstab_var`: the reply did not name `xfs`. Reasoning tokens were 0 in every case
+(the server events show `reasoning: null`), so Qwen3.5's thinking mode did not
+show up in this setup. Result: eval/results/qwen3.5-4b.tsv, commit 641a0de.
 
 ### Path-rule experiment
 
-_Placeholder: another worker is producing this. Hypothesis to test, from the
-Granite and Qwen3-4B failures above: a rule in `config/AGENTS.md` telling the
-model that a path written `./x` means the file `x` in the current directory and
-never `/x`. Granite cases that would change if it works: 07, 08, 13, 17, 19.
-Qwen3-4B cases: `fstab_var`, `sshd_root`, `cron_add`, `hosts_entry`. Results,
-commands and the run's `runs.tsv` label go here._
+Question: does a general path rule lift Qwen3-4B-Instruct-2507 (14/20) to
+`verified`? Four of its six failures were `./etc/...` rewritten to the host's
+`/etc/...`. The rule, appended to a scratch copy of `config/AGENTS.md` through
+the eval-only `LLMKIT_EVAL_AGENTS_MD` override (the repo's `config/` is
+untouched; SHA-256 7285f1f1... before, f08d018b... after):
+
+> Paths are relative to the current directory unless given as absolute. Never
+> turn ./x or x into /x. Open the path exactly as written.
+
+Result of one fresh suite-2 run: **14/20 passed, 20/20 native calls, 5 tool
+errors (was 8): still `unverified`**, the same totals as without the rule.
+`sshd_root` went from fail to pass; `restore_backup` went from pass to fail (a
+failed edit match and a wrong claim that the file was already restored, not a
+path problem). `fstab_var`, `cron_add` and `hosts_entry` still read or edited
+the host's `/etc/...`. `json_fix` and `most_errors` fail as before. A general
+path rule is therefore not enough for this model. An earlier attempt was
+aborted at 13 cases by a machine restart and is not counted. Commit c2f2d62;
+per-case results in eval/results/qwen3-4b-instruct-2507+pathrule.tsv.
 
 ## R2: the three DevOps models, checked against their repos (2026-10-06)
 
@@ -321,3 +336,41 @@ file under the cap, so they are not evaluated here:
 Qwen2.5-Coder-7B (4.68 GB) is evaluated only because it was already in the
 dev cache from M1. `qweble-sol-4b` has a single GGUF (Q4_K_M, 2.71 GB) and no
 third-party quants, which is under the cap.
+
+## Outcome (2026-10-09)
+
+`tool_calling` in `models/catalog.json`:
+
+| id | value | basis |
+|---|---|---|
+| `qweble-sol-4b` | `verified` | 20/20 native, 19/20 passed |
+| `qwen3.5-4b` | `verified` (not in the catalog yet) | 20/20 native, 19/20 passed |
+| `qwen3-4b-instruct-2507` | `unverified` (not in the catalog) | 20/20 native, 14/20 passed, with and without the path rule |
+| `granite-4.1-3b` | `unverified` (not in the catalog) | 17/20 native, 6/20 passed |
+| `phi3-sysadmin` | `broken` | 0/20 native |
+| `qwen2.5-coder-7b-instruct` | `broken` | 0/20 native |
+| `ulysses-7b` | `unverified` | not evaluated: no GGUF under the 3 GB cap |
+
+**Default: `qweble-sol-4b`.** Two models are `verified` with the same 19/20.
+By the rule above (most passed, then faster on CPU, then smaller download)
+Qweble-Sol-4B wins: 5.4 against 5.0 generated tok/s, 16.4 against 15.4 prompt
+tok/s, 2.71 against 2.74 GB. These margins are small and the machine was
+shared, so treat them as a tie broken by the rule, not as a measured
+difference. Qweble-Sol-4B is also the DevOps-tuned model the PRD asked for.
+
+Caveats for the next milestones:
+
+- R1 is resolved: at least one model with native tool calls exists.
+- The suite has 20 cases and one run per model. A 19/20 result has real
+  variance; the verdict is "reliable enough to ship as default", not a
+  ranking. Both verified models fail one different case.
+- Speed (R8): 4 to 5 generated tok/s on 4 CPU cores. Median case is about
+  90 s. Acceptable for M3/M4 acceptance, but M3 must still measure it on
+  representative hardware.
+- Qweble-Sol-4B's first run (1/20) was an infrastructure fault (the
+  llama-server child was killed; no OOM or crash in the logs) and was
+  repeated with identical settings. Treat a mid-run server death on the
+  stick as something llm-kit.sh must detect and report.
+- Qwen3.5-4B is a good fallback and could be added to the catalog (its
+  licence still has to be checked per R9 before it is offered).
+- Not evaluated, over the 3 GB cap: `ulysses-7b`, `qwen2.5-7b-instruct`.

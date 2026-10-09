@@ -5,6 +5,6 @@ date	suite	label	model	gguf	ctx	server_args	llama	zot	cases	tool_cases	passed	te
 2026-10-06T15:30:12Z	2	granite-4.1-3b	granite-4.1-3b	granite-4.1-3b-Q4_K_M.gguf	16384	-	b11429	v0.4.17	20	17	6	3	10	18.5	4.8	8	76	39	1527	unverified
 2026-10-07T01:40:13Z	2	qweble-sol-4b-invalid	qweble-sol-4b	Qweble-Sol-4B-Q4_K_M.gguf	16384	-	b11429	v0.4.17	20	1	1	0	0	21.1	6.1	11	203	18	574	broken
 2026-10-07T08:11:55Z	2	phi3-sysadmin	phi3-sysadmin	phi3-sysadmin-Q4_K_M.gguf	4096	-	b11429	v0.4.17	20	0	0	0	0	8.0	3.2	12	115	12	678	broken
+2026-10-09T10:43:37Z	2	qweble-sol-4b	qweble-sol-4b	Qweble-Sol-4B-Q4_K_M.gguf	16384	-	b11429	v0.4.17	20	20	19	0	0	16.4	5.4	12	177	93	3497	verified
 2026-10-09T10:52:47Z	2	qwen3-4b-instruct-2507+pathrule+agents-sha256=f08d018b5ca044898d3b967ddce849c83bae7269f8b94da029f870a7fd9d41b5	qwen3-4b-instruct-2507	Qwen3-4B-Instruct-2507-Q4_K_M.gguf	16384	-	b11429	v0.4.17	20	20	14	0	5	15.3	4.3	14	105	50	2848	unverified
 2026-10-09T11:59:55Z	2	qwen3.5-4b	qwen3.5-4b	Qwen3.5-4B-Q4_K_M.gguf	16384	-	b11429	v0.4.17	20	20	19	0	5	15.4	5.0	6	205	91	2154	verified
-2026-10-09T10:43:37Z	2	qweble-sol-4b	qweble-sol-4b	Qweble-Sol-4B-Q4_K_M.gguf	16384	-	b11429	v0.4.17	20	20	19	0	0	16.4	5.4	12	177	93	3497	verified
