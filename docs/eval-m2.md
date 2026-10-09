@@ -93,7 +93,8 @@ tok/s are totals over the run (all prompt or generated tokens / their time).
 | Qwen2.5-Coder-7B-Instruct (current default) | 0/20 | 0/20 | 13 | 0 | 12.4 | 4.1 | 17 s | 24 s | broken |
 | Qwen3-4B-Instruct-2507 | 20/20 | 14/20 | 0 | 8 | 15.8 | 3.4 | 12 s | 48 s | unverified |
 | Granite-4.1-3B | 17/20 | 6/20 | 3 | 10 | 18.5 | 4.8 | 8 s | 39 s | unverified |
-| Qweble-Sol-4B | 1/20 | 1/20 | 0 | 0 | 21.1 | 6.1 | 11 s | 18 s | broken, **invalid run: server died, re-run** (below) |
+| Qweble-Sol-4B | 20/20 | 19/20 | 0 | 0 | 16.4 | 5.4 | 12 s | 93 s | **verified** |
+| _Qweble-Sol-4B, first run (2026-10-07)_ | _1/20_ | _1/20_ | _0_ | _0_ | _21.1_ | _6.1_ | _11 s_ | _18 s_ | _invalid: infra fault, ignore (below)_ |
 | Phi-3-mini sysadmin (4k ctx) | 0/20 | 0/20 | 0 | 0 | 8.0 | 3.2 | 12 s | 12 s | broken |
 | Qwen3.5-4B | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending (another worker's run; no numbers yet)_ |
 
@@ -172,9 +173,32 @@ need the 3 malformed calls (02, 04, 11) to become native calls and the
 misreadings (05, 06, 15) and bad arguments (16, 18, 20) to go away. We did not test other sampling settings. A re-run is
 not needed because the cause is the model.
 
-**Qweble-Sol-4B** (1/20 native, 0 tool errors, 0 text calls): **the run is
-invalid, a harness/infrastructure artefact, not evidence about the model.**
-It did not "reply with reasoning only" or hit a step or context limit:
+**Qweble-Sol-4B** (re-run 2026-10-09: 20/20 native, 19/20 passed, 0 tool
+errors, 0 text calls, verdict **verified**): a model that works with zot.
+
+- Every case made native, well-formed tool calls (`eval/results/qweble-sol-4b.tsv`);
+  `reasoning_tok` is 0 throughout. 19 passes, one failure:
+  `restore_backup` (19). The model read the backup, then read
+  `nginx.conf` and saw it was cut off mid-line (`worker_conn@@@@…`), and
+  "restored" it with one `edit` that replaced only that damaged line, instead
+  of copying the backup over it. The file still differs from the backup
+  (`nginx.conf differs from the backup`). A model mistake, not a harness one.
+- `count_500` (05) passed but shows `zot_exit 1`: it used all 8 steps
+  (`zot: max steps (8) exceeded`) with 8 `bash` calls and still left the right
+  answer. The slowest cases are 05 (587 s) and `json_fix` (15, 278 s, 1,320
+  generated tokens).
+- Speed: 16.4 prompt tok/s and 5.4 gen tok/s over the run, median case 93 s,
+  load 12 s. `runs.tsv` `total_s` (3,497 s) includes waiting for the
+  inference lock behind other workers' runs, so it is not the model's time.
+- The server did not die: one router and one child for the whole run, no
+  `exited with status 1`, no abort or assert in `llama-server.log` (it ends
+  with a normal `exited with status 0`). Run
+  `qweble-sol-4b.1009-1315.EqjD`.
+
+**The first Qweble run (`qweble-sol-4b.1007-0500.CUeO`, 1/20) is invalid:
+infrastructure fault.** Keep it only as a record. It is labelled
+`qweble-sol-4b-invalid` in `runs.tsv`, and its `eval/results/qweble-sol-4b.tsv` was replaced by the
+re-run above (it is in git history). What it showed:
 
 - `write_motd` (01) is a real pass: 3 native calls (`write`, `bash`,
   `bash`) with correct arguments, and prompt processing of 1,744 tokens at
@@ -198,35 +222,34 @@ It did not "reply with reasoning only" or hit a step or context limit:
   `zot-stderr.txt`: the router itself was gone, so no request reached a model.
   Their 18 s each is zot's retries. `prompt_tok` is 0 for all 19 cases in
   `results.tsv`.
-- So the `runs.tsv` line is computed from case 01 alone (hence 203 s "first
+- Its `runs.tsv` line was computed from case 01 alone (hence 203 s "first
   case", 6.1 gen tok/s from one case).
 
-The log does not say *why* the child died (a crash line would be in
-`llama-server.log` and there is none), and nothing in this evidence shows who
-stopped the router at ~5 minutes in (the harness only kills it after the last
-case, `run-eval.sh`). Candidate causes, none proved: an external kill (other
-agents run processes on the same machine, and `llama-server` is a shared
-binary); a crash of the Qwen3.5 architecture in llama.cpp b11429 (the
-children died at the start of prompt processing; this run has no baseline
-for that); memory
-pressure on the shared 8 GB machine (no OOM line was available to read). A
-second finding is a **harness gap**: zot ends such a turn with `stop: end` and
-no error, and `run-eval.sh` scores it as an ordinary "no native tool call"
-failure. The runner should record cases whose usage shows `output: 0`, or whose
-`zot_exit` is non-zero with `connection refused`, as `infra` instead of
-`fail`, and the criteria should refuse to set a verdict from such a run.
+**Why the server died: unknown.** Read-only evidence from 2026-10-09 (the
+machine was rebooted afterwards, so the evidence is from that boot's journal):
 
-*What would change the verdict:* a clean re-run. The one case that ran
-shows well-formed calls, so a `broken` verdict is not supported. Re-run:
+- No OOM kill: `journalctl -k` for that boot has no `Out of memory` or
+  `Killed process` line and nothing from `systemd-oomd` besides its
+  start/stop. (Free RAM now: ~8.8 GB of 15.7 GB, swap unused; RAM at the time of the run was not recorded.)
+- No crash signature: `llama-server.log` has no abort, assert or
+  segfault line, and `coredumpctl` has no llama-server dump (only zen-browser,
+  orca-ide and quickshell dumps, none in that window).
+- The kernel log in 05:00-05:10 local on 2026-10-07 holds only unrelated
+  lines (UFW, USB, keyboard, a PCIe AER correctable error).
+- It did **not** repeat: the identical command (same binary, args and
+  GGUF) ran 20 cases without a death in the re-run, and an earlier re-run
+  attempt (`qweble-sol-4b.1008-2344.jGXt`) passed its first 7 cases before the
+  machine shut down at 00:10 on 2026-10-09 (journal: orderly shutdown, not a
+  crash). So Qwen3.5's architecture is not what kills the child.
 
-```sh
-eval/run-eval.sh qweble-sol-4b ~/.cache/llm-kit-dev/models/Qweble-Sol-4B-Q4_K_M.gguf
-```
-
-(or `FORCE=1 eval/run-all.sh`), and keep `llama-server.log`; if the child dies
-again, its stderr is in that log. If the model passes only with reasoning off,
-the `--reasoning off` server argument exists for that (`--server-arg
---reasoning --server-arg off`, with `--label` to keep the variants apart).
+That leaves an external kill (other agents shared the machine; the child dies
+silently with exit status 1, as it would after a SIGKILL) as the most likely
+cause, but nothing proves it. The **harness gap** stands: zot ends such a
+turn with `stop: end` and no error, and `run-eval.sh` scores it as an ordinary
+"no native tool call" failure. The runner should record cases whose usage
+shows `output: 0`, or whose `zot_exit` is non-zero with `connection refused`,
+as `infra` instead of `fail`, and the criteria should refuse to set a verdict
+from such a run.
 
 **Phi-3-mini sysadmin** (0/20 native, 0 tool errors): the model's fault and
 its chat template's, not the context size.
