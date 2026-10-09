@@ -142,6 +142,7 @@ render_template() {
 
 # render_zot_home CONFIG_DIR ZOT_HOME MODEL_ID CTX URL - what llm-kit.sh renders
 # on every launch: config.json, auth.json (600), models.json, AGENTS.md.
+# LLMKIT_EVAL_AGENTS_MD optionally replaces only AGENTS.md for experiments.
 render_zot_home() {
   local cfg=$1 zh=$2
   mkdir -p "$zh" || return 1
@@ -149,7 +150,7 @@ render_zot_home() {
     render_template "$cfg/zot-auth.json" "$zh/auth.json" "$3" "$4" "$5" &&
     chmod 600 "$zh/auth.json" &&
     render_template "$cfg/models.json" "$zh/models.json" "$3" "$4" "$5" &&
-    cp "$cfg/AGENTS.md" "$zh/AGENTS.md" &&
+    cp "${LLMKIT_EVAL_AGENTS_MD:-$cfg/AGENTS.md}" "$zh/AGENTS.md" &&
     rm -f "$zh/models-cache.json"
 }
 

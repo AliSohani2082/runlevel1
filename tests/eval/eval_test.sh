@@ -185,3 +185,21 @@ test_verdict_thresholds() {
   assert_eq broken "$(verdict 20 16 4)" "calls tools, but almost nothing gets done"
   assert_eq broken "$(verdict 20 0 0)"
 }
+
+
+test_render_zot_home_uses_agents_override_on_every_render() {
+  local original
+  original=$(cat "$REPO_ROOT/config/AGENTS.md")
+  printf 'Use paths exactly as written.\n' >override.md
+  LLMKIT_EVAL_AGENTS_MD=$PWD/override.md
+  export LLMKIT_EVAL_AGENTS_MD
+  render_zot_home "$REPO_ROOT/config" zh qwen3-4b 16384 http://127.0.0.1:18080 || fail "render failed"
+  assert_eq "Use paths exactly as written." "$(cat zh/AGENTS.md)"
+  printf 'overwritten by model\n' >zh/AGENTS.md
+  render_zot_home "$REPO_ROOT/config" zh qwen3-4b 16384 http://127.0.0.1:18080 || fail "re-render failed"
+  assert_eq "Use paths exactly as written." "$(cat zh/AGENTS.md)"
+  assert_eq "$original" "$(cat "$REPO_ROOT/config/AGENTS.md")"
+  LLMKIT_EVAL_AGENTS_MD=$PWD/missing.md
+  run render_zot_home "$REPO_ROOT/config" zh qwen3-4b 16384 http://127.0.0.1:18080
+  assert_ne 0 "$STATUS" "missing override must fail rather than fall back"
+}

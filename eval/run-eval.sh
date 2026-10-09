@@ -18,7 +18,8 @@
 #   --no-results      do not write to the results directory
 # Env: LLMKIT_DEV_CACHE (~/.cache/llm-kit-dev), EVAL_BIN (dir with
 #      llama-server + libs and zot; default $LLMKIT_DEV_CACHE/bin/linux-x86_64),
-#      EVAL_CASE_TIMEOUT (seconds per case, 600), EVAL_MAX_STEPS (8)
+#      EVAL_CASE_TIMEOUT (seconds per case, 600), EVAL_MAX_STEPS (8),
+#      LLMKIT_EVAL_AGENTS_MD (optional instruction file; hash recorded in label)
 #
 # Isolation: everything runs inside bubblewrap with no network, a private
 # PID namespace (nothing outlives the run), and a read-only view of the
@@ -189,7 +190,7 @@ inside() {
   build=$(sed -n 's/.*(build \([0-9]*\).*/b\1/p' "$run/llama-version.txt" | head -n 1)
   zv=$(sed -n 's/^zot v\{0,1\}\([0-9][0-9.]*\).*$/v\1/p' "$run/zot-version.txt" | head -n 1)
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$EVAL_SUITE" "$EV_LABEL" "$id" "$EV_GGUF_NAME" "$ctx" "${EV_SERVER_ARGS:--}" \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$EVAL_SUITE" "$EV_SUMMARY_LABEL" "$id" "$EV_GGUF_NAME" "$ctx" "${EV_SERVER_ARGS:--}" \
     "${build:-?}" "${zv:-?}" "$n" "$tool_cases" "$passed" "$text_cases" "$tool_errors" \
     "$(tok_per_s "$sum_pt" "$sum_pm")" "$(tok_per_s "$sum_gt" "$sum_gm")" "$load_s" "${first:-0}" "${median:-0}" "$total_s" "$v" \
     >"$work/summary.tsv"
@@ -237,6 +238,14 @@ work=$(mktemp -d "$DEV_CACHE/work/m2/$label.$(date +%m%d-%H%M).XXXX") || die "mk
 mkdir -p "$work/models"
 # Hardlink (same filesystem as the dev cache); the router names it by stem.
 ln "$gguf" "$work/models/$model_id.gguf" 2>/dev/null || cp "$gguf" "$work/models/$model_id.gguf" || die "cannot stage the GGUF"
+summary_label=$label
+if [ -n "${LLMKIT_EVAL_AGENTS_MD:-}" ]; then
+  cp "$LLMKIT_EVAL_AGENTS_MD" "$work/experiment-AGENTS.md" || die "cannot stage AGENTS.md override"
+  export LLMKIT_EVAL_AGENTS_MD=$work/experiment-AGENTS.md
+  agents_sha=$(sha256sum "$LLMKIT_EVAL_AGENTS_MD")
+  agents_sha=${agents_sha%% *}
+  summary_label="$label+agents-sha256=$agents_sha"
+fi
 say "work dir: $work"
 
 sandbox=(bwrap --ro-bind / / --dev /dev --proc /proc --tmpfs /tmp
@@ -244,7 +253,7 @@ sandbox=(bwrap --ro-bind / / --dev /dev --proc /proc --tmpfs /tmp
 [ -d /run/media ] && sandbox+=(--tmpfs /run/media)
 
 EV_WORK=$work EV_BIN=$bin EV_PORT=$port EV_MODEL_ID=$model_id EV_CTX=$ctx \
-  EV_CASES=$cases EV_LABEL=$label EV_SERVER_ARGS=$server_args EV_ZOT_ARGS=$zot_args \
+  EV_CASES=$cases EV_LABEL=$label EV_SUMMARY_LABEL=$summary_label EV_SERVER_ARGS=$server_args EV_ZOT_ARGS=$zot_args \
   EV_GGUF_NAME=$(basename "$gguf") EV_REPO=$repo \
   EV_CASE_TIMEOUT=${EVAL_CASE_TIMEOUT:-600} EV_MAX_STEPS=${EVAL_MAX_STEPS:-8} \
   "${sandbox[@]}" bash "$here/run-eval.sh" __inside
