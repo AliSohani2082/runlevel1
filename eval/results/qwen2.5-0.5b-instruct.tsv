@@ -1,0 +1,21 @@
+case	kind	pass	tool_calls	tool_errors	text_call	steps	secs	prompt_tok	prompt_tps	gen_tok	gen_tps	reasoning_tok	zot_exit	note
+write_motd	write	1	write	0	0	2	13	1676	158.2	102	31.4	0	0	ok
+nginx_port	read	0	edit,edit,edit,edit,edit,edit,edit,edit	8	0	8	25	725	80.4	416	25.3	0	1	reply does not contain the number 8443
+k8s_replicas	edit	0	edit,edit,edit,edit,edit,edit,edit,edit	8	0	8	20	375	59.7	368	26.7	0	1	k8s/deployment.yaml has no line matching /^  replicas: 3[[:space:]]*$/
+list_units	glob	0	write,write,write,write,write,write,write,write	8	0	8	18	438	66.7	320	28.5	0	1	reply does not mention 'api.service'
+count_500	bash	0	read	0	0	2	1	44	69.8	33	31.3	0	0	reply does not contain the number 7
+oom_victim	read	0	read	0	0	2	2	48	71.4	65	30.6	0	0	reply does not mention 'java'
+fstab_var	read	1	read	0	0	2	4	299	109.8	56	30.2	0	0	ok
+sshd_root	edit	0	bash	1	0	2	8	262	91.4	162	27.3	0	0	etc/ssh/sshd_config has no line matching /^[[:space:]]*PermitRootLogin[[:space:]]+no[[:space:]]*$/
+chmod_deploy	bash	0	edit	1	0	2	15	198	87.0	361	26.9	0	0	deploy.sh is not executable
+systemd_unit	write	0	write	0	0	2	13	250	99.0	310	27.7	0	0	backup.service has no line matching /^[[:space:]]*ExecStart[[:space:]]*=[[:space:]]*/usr/local/bin/backup\.sh/
+ss_listener	read	0	bash	0	0	2	6	355	103.8	79	30.0	0	0	reply does not mention 'pgbouncer'
+disk_full	read	0	read	0	0	2	2	43	66.3	44	30.9	0	0	reply does not mention '/var/lib/docker'
+cron_add	edit	0	edit,edit,edit,edit,edit,edit,edit,edit,edit,edit,edit	9	0	6	521	950	77.9	8655	17.0	0	0	etc/crontab has no line matching /^30[[:space:]]+0?3[[:space:]]+\*[[:space:]]+\*[[:space:]]+\*[[:space:]]+root[[:space:]]+/usr/local/bin/backup\.sh/
+dockerfile_base	edit	1	edit	0	0	2	7	193	102.3	161	30.0	0	0	ok
+json_fix	edit	0	-	0	0	1	1	23	65.7	34	32.3	0	0	no native tool call; config/app.json still does not parse: jq: parse error: Expected another key-value pair at line 7, column 3
+k8s_env	edit	0	write	0	0	2	3	90	72.1	71	28.2	0	0	k8s/deployment.yaml has no line matching /^[[:space:]]*- name:[[:space:]]*"?LOG_LEVEL"?[[:space:]]*$/
+hosts_entry	edit	0	edit,edit,edit,edit,edit,edit,edit,edit	8	0	8	20	687	96.8	392	29.1	0	1	etc/hosts has no line matching /^10\.0\.0\.5[[:space:]]+([^#]*[[:space:]])?db\.internal([[:space:]]|$)/
+most_errors	multi	0	edit	1	0	2	6	186	96.7	141	30.0	0	0	answer.txt was not created
+restore_backup	bash	0	edit,edit,edit,edit,edit,edit,edit,edit	8	0	8	24	771	97.4	467	29.0	0	1	nginx.conf differs from the backup
+tar_etc	bash	0	bash	1	0	2	4	226	103.2	65	29.7	0	0	backups/etc.tar.gz was not created
