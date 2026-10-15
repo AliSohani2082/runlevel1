@@ -77,6 +77,23 @@ log_timings() {
     END { printf "%d %d %d %d %d\n", tok["p"], ms["p"], tok["g"], ms["g"], n }'
 }
 
+# infra_fault LOG START END STDERR PORT - prints why a case failed because of
+# the server, not the model, or nothing. Two signals count; an empty reply
+# (usage output 0) alone does not, since the repo does not define it as a
+# liveness indicator:
+#   - the router log between bytes START and END (the case's own range) says a
+#     model instance exited with a non-zero status or was force-killed;
+#   - zot's stderr says the configured router endpoint refused the connection.
+infra_fault() {
+  local log=$1 start=$2 end=$3 err=$4 port=$5
+  if [ -f "$err" ] && grep -Fq "127.0.0.1:$port: connect: connection refused" "$err"; then
+    echo "router 127.0.0.1:$port refused the connection"
+  elif tail -c +"$((start + 1))" "$log" | head -c "$((end - start))" |
+    grep -Eq 'instance name=.* exited with status [1-9]|force-killing model instance'; then
+    echo "model instance died or was killed (llama-server.log)"
+  fi
+}
+
 # tok_per_s TOKENS MS - tokens per second with one decimal, or "-" for no data.
 tok_per_s() {
   if [ "${2:-0}" -gt 0 ] 2>/dev/null; then
@@ -156,13 +173,16 @@ render_zot_home() {
 
 # --- verdict (docs/eval-m2.md "Criteria") -----------------------------------
 
-# verdict CASES TOOL_CASES PASSED - catalog tool_calling value for a run.
+# verdict CASES TOOL_CASES PASSED [INFRA] - catalog tool_calling value for a run.
+#   invalid:    INFRA > 0, some case ran on a dead server: no verdict, re-run
+#               (not a catalog value)
 #   verified:   native tool calls in >= 90% of cases and >= 75% of cases passed
 #   broken:     native tool calls in < 50% of cases, or < 25% of cases passed
 #               (calls with nonsense arguments are as useless as no calls)
 #   unverified: anything in between (calls tools, but not reliably enough)
 verdict() {
-  local n=$1 t=$2 p=$3
+  local n=$1 t=$2 p=$3 i=${4:-0}
+  [ "$i" -eq 0 ] || { echo invalid; return; }
   [ "$n" -gt 0 ] || { echo unverified; return; }
   if [ $((t * 100)) -ge $((n * 90)) ] && [ $((p * 100)) -ge $((n * 75)) ]; then
     echo verified

@@ -186,6 +186,36 @@ test_verdict_thresholds() {
   assert_eq broken "$(verdict 20 0 0)"
 }
 
+test_verdict_is_invalid_when_any_case_hit_a_server_fault() {
+  assert_eq verified "$(verdict 20 18 15 0)" "no infra cases changes nothing"
+  assert_eq invalid "$(verdict 20 1 1 1)" "the incident run: one real pass, the rest infra"
+  assert_eq invalid "$(verdict 20 20 19 1)" "even a run that looks verified"
+  assert_eq invalid "$(verdict 20 0 0 19)"
+}
+
+test_infra_fault_reports_a_dead_instance_or_a_refused_router() {
+  : >err.txt
+  printf '%s\n' 'srv  log_server_r: request: POST /v1/chat/completions 127.0.0.1 200' >srv.log
+  local a b c
+  a=$(wc -c <srv.log)
+  printf '%s\n' \
+    '3.35.321.465 E srv    operator(): http client error: Failed to read connection' \
+    '3.35.321.534 I srv           run: instance name=qweble-sol-4b exited with status 1' >>srv.log
+  b=$(wc -c <srv.log)
+  printf '%s\n' '3.49.985.749 W srv           run: force-killing model instance name=qweble-sol-4b after timeout' >>srv.log
+  c=$(wc -c <srv.log)
+  printf '%s\n' '4.00.000.000 I srv           run: instance name=qweble-sol-4b exited with status 0' >>srv.log
+
+  assert_eq "" "$(infra_fault srv.log 0 "$a" err.txt 18080)" "healthy case"
+  assert_contains "$(infra_fault srv.log "$a" "$b" err.txt 18080)" "died" "exit status 1 in the case's range"
+  assert_contains "$(infra_fault srv.log "$b" "$c" err.txt 18080)" "killed" "force-kill in the case's range"
+  assert_eq "" "$(infra_fault srv.log "$c" "$(wc -c <srv.log)" err.txt 18080)" "a clean exit (status 0) is not a fault"
+
+  printf '%s\n' 'zot: openai: Post "http://127.0.0.1:18080/v1/chat/completions": dial tcp 127.0.0.1:18080: connect: connection refused' >err.txt
+  assert_contains "$(infra_fault srv.log 0 "$a" err.txt 18080)" "refused" "router endpoint gone"
+  assert_eq "" "$(infra_fault srv.log 0 "$a" err.txt 18081)" "a refusal from some other endpoint is not ours"
+}
+
 
 test_render_zot_home_uses_agents_override_on_every_render() {
   local original

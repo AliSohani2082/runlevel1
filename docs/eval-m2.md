@@ -63,6 +63,14 @@ right and the rest of it is intact, or the final reply contains the fact.
 `tests/eval/eval_test.sh` proves every check fails on the untouched fixture
 and passes after a reference solution, and rejects typical wrong outcomes.
 
+A failing case is recorded as **`infra`** (in the `pass` column of
+`results.tsv`, instead of `0`) when the server failed under it, not the model:
+the router log, in that case's byte range, says a model instance exited with
+a non-zero status or was force-killed, **or** `zot-stderr.txt` reports
+`connection refused` on the configured router endpoint. An empty reply
+(`usage` `output: 0`) is not enough by itself. A case that passed stays a
+pass.
+
 Also recorded per case: tool names, tool errors (bad arguments, failed edit
 matches), whether the model printed a tool call as text, steps, wall time,
 prompt and generation tokens and tokens/sec from the server's own timing
@@ -77,6 +85,7 @@ lines, reasoning tokens.
 | `verified` | native tool calls in ≥ 90% of cases (18/20) **and** ≥ 75% of cases passed (15/20) |
 | `broken` | native tool calls in < 50% of cases (fewer than 10/20), **or** < 25% of cases passed (fewer than 5/20): calls with nonsense arguments are as useless as no calls |
 | `unverified` | anything in between: it calls tools, but not reliably enough to rely on |
+| `invalid` | any case is `infra` (see Scoring). Not a catalog value: no verdict is set, re-run the model |
 
 The default becomes the `verified` model with the most passed cases; ties go
 to the faster one on CPU (R8), then to the smaller download.
@@ -244,12 +253,13 @@ machine was rebooted afterwards, so the evidence is from that boot's journal):
 
 That leaves an external kill (other agents shared the machine; the child dies
 silently with exit status 1, as it would after a SIGKILL) as the most likely
-cause, but nothing proves it. The **harness gap** stands: zot ends such a
-turn with `stop: end` and no error, and `run-eval.sh` scores it as an ordinary
-"no native tool call" failure. The runner should record cases whose usage
-shows `output: 0`, or whose `zot_exit` is non-zero with `connection refused`,
-as `infra` instead of `fail`, and the criteria should refuse to set a verdict
-from such a run.
+cause, but nothing proves it. This was a **harness gap**: zot ends such a
+turn with `stop: end` and no error, and `run-eval.sh` scored it as an ordinary
+"no native tool call" failure. It is closed: a failing case with a dead
+model instance in the router log, or `connection refused` on the router's
+endpoint in `zot-stderr.txt`, is now recorded as `infra`, and any `infra` case
+makes the run's verdict `invalid` (see Scoring and Criteria). Runs made
+before that change were not re-scored.
 
 **Phi-3-mini sysadmin** (0/20 native, 0 tool errors): the model's fault and
 its chat template's, not the context size.
@@ -369,7 +379,8 @@ Caveats for the next milestones:
   representative hardware.
 - Qweble-Sol-4B's first run (1/20) was an infrastructure fault (the
   llama-server child was killed; no OOM or crash in the logs) and was
-  repeated with identical settings. Treat a mid-run server death on the
+  repeated with identical settings. The eval runner now flags such cases
+  as `infra` and the run as `invalid`. Treat a mid-run server death on the
   stick as something llm-kit.sh must detect and report.
 - Qwen3.5-4B is a good fallback and could be added to the catalog (its
   licence still has to be checked per R9 before it is offered).

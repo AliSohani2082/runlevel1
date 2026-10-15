@@ -107,7 +107,7 @@ inside() {
   zargs=(--json --no-session --max-steps "$EV_MAX_STEPS")
   [ -n "$EV_ZOT_ARGS" ] && eval "zargs+=($EV_ZOT_ARGS)"
 
-  local c n=0 total_t0 cdir prompt rc secs offs=""
+  local c n=0 total_t0 cdir prompt rc secs offs="" cstart cend fault
   total_t0=$(now_ms)
   : >"$work/cases.tsv"
   for c in $EV_CASES; do
@@ -124,12 +124,14 @@ inside() {
     prompt=$(eval_prompt "$c")
     printf '%s\n' "$prompt" >"$cdir/prompt.txt"
     lock
-    offs="$offs $(wc -c <"$run/llama-server.log")"
+    cstart=$(wc -c <"$run/llama-server.log")
+    offs="$offs $cstart"
     t0=$(now_ms)
     (cd "$ws" && timeout -k 10 "$EV_CASE_TIMEOUT" "$bin/zot" "${zargs[@]}" "$prompt") \
       </dev/null >"$cdir/events.jsonl" 2>"$cdir/zot-stderr.txt" 9<&-
     rc=$?
     secs=$((($(now_ms) - t0) / 1000))
+    cend=$(wc -c <"$run/llama-server.log")
     unlock
 
     local calls errors steps textcall reasoning answer note pass
@@ -141,13 +143,18 @@ inside() {
     reasoning=$(ev_reasoning_tokens "$cdir/events.jsonl")
     answer=$(ev_final_text "$cdir/events.jsonl")
     printf '%s\n' "$answer" >"$cdir/answer.txt"
-    note=$(cd "$ws" && ANSWER=$answer "check_$c" 2>&1)
-    if [ $? -eq 0 ] && [ -n "$calls" ]; then
+    if note=$(cd "$ws" && ANSWER=$answer "check_$c" 2>&1) && [ -n "$calls" ]; then
       pass=1 note=ok
     else
       pass=0
       [ -n "$calls" ] || note="no native tool call; $note"
       [ $rc -eq 124 ] && note="timed out after ${EV_CASE_TIMEOUT}s; $note"
+      # A dead server is not a failed model: such a case is "infra", and any
+      # infra case makes the run invalid (docs/eval-m2.md "Criteria").
+      fault=$(infra_fault "$run/llama-server.log" "$cstart" "$cend" "$cdir/zot-stderr.txt" "$port")
+      if [ -n "$fault" ]; then
+        pass=infra note="infra: $fault; $note"
+      fi
     fi
     (cd "$work" && tar -czf "$cdir/ws.tar.gz" ws 2>/dev/null)
     note=$(printf '%s' "$note" | tr '\t\n' '  ' | cut -c1-200)
@@ -179,14 +186,16 @@ inside() {
     k=$((k + 1))
   done <"$work/cases.tsv"
 
-  local passed tool_cases text_cases tool_errors first median v build zv
+  local passed infra tool_cases text_cases tool_errors first median v build zv
   passed=$(awk -F'\t' 'NR > 1 && $3 == 1' "$work/results.tsv" | wc -l | tr -d ' ')
+  infra=$(awk -F'\t' 'NR > 1 && $3 == "infra"' "$work/results.tsv" | wc -l | tr -d ' ')
   tool_cases=$(awk -F'\t' 'NR > 1 && $4 != "-"' "$work/results.tsv" | wc -l | tr -d ' ')
   text_cases=$(awk -F'\t' 'NR > 1 && $6 == 1' "$work/results.tsv" | wc -l | tr -d ' ')
   tool_errors=$(awk -F'\t' 'NR > 1 { s += $5 } END { print s + 0 }' "$work/results.tsv")
   first=$(awk -F'\t' 'NR == 2 { print $8 }' "$work/results.tsv")
   median=$(awk -F'\t' 'NR > 1 { print $8 }' "$work/results.tsv" | sort -n | awk '{ a[NR] = $1 } END { print (NR ? a[int((NR + 1) / 2)] : 0) }')
-  v=$(verdict "$n" "$tool_cases" "$passed")
+  v=$(verdict "$n" "$tool_cases" "$passed" "$infra")
+  [ "$infra" -eq 0 ] || say "$infra case(s) failed on a server fault, not the model: the run is invalid, re-run it"
   build=$(sed -n 's/.*(build \([0-9]*\).*/b\1/p' "$run/llama-version.txt" | head -n 1)
   zv=$(sed -n 's/^zot v\{0,1\}\([0-9][0-9.]*\).*$/v\1/p' "$run/zot-version.txt" | head -n 1)
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
