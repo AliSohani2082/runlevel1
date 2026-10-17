@@ -1,0 +1,21 @@
+case	kind	pass	tool_calls	tool_errors	text_call	steps	secs	prompt_tok	prompt_tps	gen_tok	gen_tps	reasoning_tok	zot_exit	note
+write_motd	write	0	-	0	1	1	122	1622	14.3	38	4.3	0	0	no native tool call; motd.txt was not created
+nginx_port	read	0	-	0	1	1	14	22	9.0	51	4.3	0	0	no native tool call; reply does not contain the number 8443
+k8s_replicas	edit	0	-	0	1	1	55	25	9.2	219	4.2	0	0	no native tool call; k8s/deployment.yaml has no line matching /^  replicas: 3[[:space:]]*$/
+list_units	glob	0	-	0	1	1	21	25	9.0	78	4.2	0	0	no native tool call; reply does not mention 'api.service'
+count_500	bash	0	-	0	1	1	57	26	8.8	229	4.2	0	0	no native tool call; reply does not contain the number 7
+oom_victim	read	0	-	0	0	1	21	30	9.0	77	4.2	0	0	no native tool call; reply does not mention 'java'
+fstab_var	read	0	-	0	1	1	30	22	8.6	117	4.2	0	0	no native tool call; reply does not mention 'xfs'
+sshd_root	edit	0	-	0	0	1	11	26	9.0	39	4.3	0	0	no native tool call; etc/ssh/sshd_config has no line matching /^[[:space:]]*PermitRootLogin[[:space:]]+no[[:space:]]*$/
+chmod_deploy	bash	0	-	0	0	1	33	13	7.9	135	4.2	0	0	no native tool call; deploy.sh is not executable
+systemd_unit	write	0	-	0	1	1	23	40	9.6	84	4.3	0	0	no native tool call; backup.service is missing
+ss_listener	read	0	-	0	1	1	38	37	9.6	144	4.2	0	0	no native tool call; reply does not mention 'pgbouncer'
+disk_full	read	0	-	0	0	1	10	25	9.0	32	4.4	0	0	no native tool call; reply does not mention '/var/lib/docker'
+cron_add	edit	0	-	0	1	1	124	40	9.6	482	4.0	0	0	no native tool call; etc/crontab has no line matching /^30[[:space:]]+0?3[[:space:]]+\*[[:space:]]+\*[[:space:]]+\*[[:space:]]+root[[:space:]]+/usr/local/bin/backup\.sh/
+dockerfile_base	edit	0	-	0	0	1	23	31	8.6	81	4.1	0	0	no native tool call; Dockerfile has no line matching /^FROM[[:space:]]+ubuntu:24\.04[[:space:]]*$/
+json_fix	edit	0	-	0	0	1	15	23	8.4	53	4.2	0	0	no native tool call; config/app.json still does not parse: jq: parse error: Expected another key-value pair at line 7, column 3
+k8s_env	edit	0	-	0	1	1	24	27	8.4	87	4.1	0	0	no native tool call; k8s/deployment.yaml has no line matching /^[[:space:]]*- name:[[:space:]]*"?LOG_LEVEL"?[[:space:]]*$/
+hosts_entry	edit	0	-	0	0	1	37	26	8.6	135	3.9	0	0	no native tool call; etc/hosts has no line matching /^10\.0\.0\.5[[:space:]]+([^#]*[[:space:]])?db\.internal([[:space:]]|$)/
+most_errors	multi	0	-	0	1	1	27	35	8.6	90	3.9	0	0	no native tool call; answer.txt was not created
+restore_backup	bash	0	-	0	1	1	31	26	8.0	109	3.9	0	0	no native tool call; nginx.conf differs from the backup
+tar_etc	bash	0	-	0	1	1	13	25	8.0	41	4.0	0	0	no native tool call; backups/etc.tar.gz was not created

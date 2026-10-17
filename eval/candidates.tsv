@@ -1,0 +1,11 @@
+# M2 candidates. TAB-separated. The GGUF is looked up as $LLMKIT_DEV_CACHE/models/<file>.
+# id	repo	file	sha256	size	ctx	why
+qwen2.5-0.5b-instruct	Qwen/Qwen2.5-0.5B-Instruct-GGUF	qwen2.5-0.5b-instruct-q4_k_m.gguf	74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db	491400032	16384	harness baseline (passed the M1 single call); not a product candidate
+qwen2.5-coder-7b-instruct	Qwen/Qwen2.5-Coder-7B-Instruct-GGUF	qwen2.5-coder-7b-instruct-q4_k_m.gguf	509287f78cb4d4cf6b3843734733b914b2c158e43e22a7f4bf5e963800894d3c	4683073536	16384	current catalog default; broken in M1 (control)
+qwen3-4b-instruct-2507	unsloth/Qwen3-4B-Instruct-2507-GGUF	Qwen3-4B-Instruct-2507-Q4_K_M.gguf	3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597	2497281120	16384	replacement default (D9): non-thinking 4B instruct, apache-2.0
+granite-4.1-3b	ibm-granite/granite-4.1-3b-GGUF	granite-4.1-3b-Q4_K_M.gguf	662b0626cd58f443baea23559b469df6576a81d349649c59413b36a9fb32eb29	2099501664	16384	replacement default (D9): 3B, built for tool calling, apache-2.0
+qweble-sol-4b	ukuwzi/Qweble-Sol-4B-GGUF	Qweble-Sol-4B-Q4_K_M.gguf	53000c5e4153b2ea1011dcbbe4dd8d656edf679e209c9c205b2bab062ec19cc3	2708804064	16384	PRD DevOps candidate (Qwen3.5-4B fine-tune)
+phi3-sysadmin	lalatendu/phi3-sysadmin-lalatendu	phi3-sysadmin-Q4_K_M.gguf	aca782c44dc9235966ed2333b36171afc75afe4bb6d7b35d5a3e871a54e83164	2318919552	4096	PRD DevOps candidate (Phi-3-mini-4k fine-tune)
+qwen3.5-4b	unsloth/Qwen3.5-4B-GGUF	Qwen3.5-4B-Q4_K_M.gguf	00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4	2740937888	16384	replacement default (D9), and the base of qweble-sol-4b
+qwen2.5-7b-instruct	bartowski/Qwen2.5-7B-Instruct-GGUF	Qwen2.5-7B-Instruct-Q4_K_M.gguf	65b8fcd92af6b4fefa935c625d1ac27ea29dcb6ee14589c55a8f115ceaaa1423	4683074240	16384	replacement default named in D9 (closest drop-in)
+ulysses-7b	jalpan04/Ulysses	devops_model_q4_k_m.gguf	54b3009cff3b8abc0037c4c7f65117031407000264d64d6a0305976d9a9dd88e	4683073312	16384	PRD DevOps candidate (Qwen2.5-Coder-7B fine-tune); gated repo, needs an HF token

@@ -84,3 +84,15 @@ models with native tool calling. Qwen2.5-7B-Instruct is the closest drop-in
 instruct models that are also faster on CPU (R8). Move `default` to the
 first one that passes. Until then, setup.sh must warn when the selected
 model's `tool_calling` is `broken`.
+
+## D10. The default model is `qweble-sol-4b` (M2 result, closes D9)
+
+M2 ran a fixed 20-case DevOps suite through zot + llama.cpp b11429 (docs/eval-m2.md).
+Two models are `verified` (20/20 native tool calls, 19/20 passed):
+`qweble-sol-4b` and `qwen3.5-4b`. The rule from the evaluation plan (most
+passed, then CPU speed, then smaller download) picks `qweble-sol-4b`, which is
+also the PRD's DevOps-tuned candidate. `models/catalog.json` now has
+`"default": "qweble-sol-4b"`. `qwen2.5-coder-7b-instruct` and `phi3-sysadmin`
+are `broken`. A general path rule in AGENTS.md did not lift Qwen3-4B to
+`verified`, so `config/AGENTS.md` is unchanged. Models over the 3 GB download
+cap (`ulysses-7b`, `qwen2.5-7b-instruct`) were not evaluated.
